@@ -110,14 +110,26 @@ func handleCreateMeme(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "create meme failed: db error", http.StatusInternalServerError)
 			return
 		}
+	} else if len(jsonData) == 0 {
+		// we can't unmarshal shit if there's nothing in memes.json.
+		// that's why we have to initialize jsonData
+		jsonData = []byte("[]")
 	}
 
 	var memes []Meme
+
 	if err := json.Unmarshal(jsonData, &memes); err != nil {
 		log.Printf("handleCreateMeme Error: %v", err)
 		http.Error(w, "create meme failed: db error", http.StatusInternalServerError)
 		return
 	}
+
+	for _, m := range memes {
+		if strings.EqualFold(m.Name, name) {
+			http.Error(w, "meme with this name already exists", http.StatusConflict)
+		}
+	}
+
 	origFileName := filepath.Base(header.Filename)
 	diskPath := filepath.Join("images", origFileName)
 	publicURL := "/images/" + origFileName
@@ -142,7 +154,6 @@ func handleCreateMeme(w http.ResponseWriter, r *http.Request) {
 	}
 	timeNow := time.Now()
 	id := fmt.Sprintf("%d", timeNow.UnixNano())
-	name = fmt.Sprintf("%v-%v", name, id)
 	newMeme := Meme{
 		ID:       id,
 		Name:     name,
