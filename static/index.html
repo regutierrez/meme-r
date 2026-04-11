@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>meme-r</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- ============ ADD MEME MODAL (popover API) ============ -->
+  <dialog id="add-modal" popover>
+    <h2>add a meme</h2>
+    <form method="POST" action="/api/memes" enctype="multipart/form-data">
+      <label>name
+        <input type="text" name="name" placeholder="doge.jpg">
+      </label>
+      <label>upload
+        <input type="file" name="file" accept="image/*">
+      </label>
+      <label>tags (comma separated)
+        <input type="text" name="tags" placeholder="funny, cat, classic">
+      </label>
+      <div class="modal-actions">
+        <button type="submit" >save</button>
+        <button type="button" popovertarget="add-modal" popovertargetaction="hide">cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ============ MAIN LAYOUT ============ -->
+  <div class="app">
+
+    <!-- ======== SIDEBAR ======== -->
+    <aside class="sidebar">
+      <h1 class="logo">meme-r</h1>
+
+      <!-- search -->
+      <div class="sidebar-section">
+        <label class="search-label">search
+          <input type="search" placeholder="title or tag...">
+        </label>
+      </div>
+
+      <!-- filter by tag -->
+      <details class="sidebar-section" open>
+        <summary>filter by tag</summary>
+        <div class="tag-filters">
+          <!-- tags loaded from memes.json -->
+        </div>
+      </details>
+
+      <!-- sort -->
+      <details class="sidebar-section" open>
+        <summary>sort</summary>
+        <div class="sort-options">
+          <label><input type="radio" name="sort" value="date-new" checked> newest first</label>
+          <label><input type="radio" name="sort" value="date-old"> oldest first</label>
+          <label><input type="radio" name="sort" value="az"> a → z</label>
+          <label><input type="radio" name="sort" value="za"> z → a</label>
+        </div>
+      </details>
+    </aside>
+
+    <!-- ======== GALLERY (the stash) ======== -->
+    <main class="stash">
+      <h2 class="stash-title">the stash</h2>
+
+      <!-- pagination radios (must be siblings of .page for ~ selector) -->
+      <input type="radio" name="page" id="page1" class="page-radio" checked>
+
+      <!-- PAGE 1 -->
+      <div class="page page-1">
+      </div>
+
+      <!-- pagination controls -->
+      <nav class="pagination" aria-label="pagination">
+        <label for="page1" class="page-btn">1</label>
+      </nav>
+
+    </main>
+  </div>
+
+  <script>
+    async function loadMemes() {
+      try {
+        const res = await fetch('/api/memes');
+        const memes = await res.json();
+        const container = document.querySelector('.page-1');
+        
+        if (memes.length === 0) {
+          container.innerHTML = '<p class="empty-msg">no memes in the stash yet. add one!</p>';
+          return;
+        }
+
+        container.innerHTML = memes.map(m => `
+          <article class="card" data-id="${m.id}">
+            <img src="${m.image_url}" alt="${m.name}" loading="lazy">
+            <div class="card-info">
+              <div class="card-name">${m.name}</div>
+              <div class="card-tags">
+                ${m.tags.map(t => `#${t}`).join(' ')}
+              </div>
+              <div class="card-date">${new Date(m.added_at).toLocaleDateString()}</div>
+            </div>
+          </article>
+        `).join('');
+      } catch (err) {
+        console.error("failed to load memes:", err);
+      }
+    }
+    async function loadTags() {
+      try {
+        const res = await fetch('/api/memes');
+        const memes = await res.json();
+        
+        // Extract unique tags from all memes
+        const tags = [...new Set(memes.flatMap(m => m.tags || []))].sort();
+        
+        const container = document.querySelector('.tag-filters');
+        
+        if (tags.length === 0) {
+          container.innerHTML = '<p class="empty-tags">no tags yet</p>';
+          return;
+        }
+        
+        container.innerHTML = tags.map(t => 
+          `<label><input type="checkbox" name="tag" value="${t}"> ${t}</label>`
+        ).join('');
+      } catch (err) {
+        console.error("failed to load tags:", err);
+      }
+    }
+
+    // Paste handler: paste image anywhere to open modal
+    window.addEventListener('paste', (e) => {
+      const file = Array.from(e.clipboardData.files).find(f => f.type.startsWith('image/'));
+      if (!file) return;
+      openModalWithFile(file);
+    });
+
+    // Drag and drop handlers
+    window.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      document.body.classList.add('drag-over');
+    });
+    window.addEventListener('dragleave', (e) => {
+      if (e.target === document.body) document.body.classList.remove('drag-over');
+    });
+    window.addEventListener('drop', (e) => {
+      e.preventDefault();
+      document.body.classList.remove('drag-over');
+      const file = Array.from(e.dataTransfer.files).find(f => f.type.startsWith('image/'));
+      if (file) openModalWithFile(file);
+    });
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      // ESC removes focus from search
+      if (e.key === 'Escape' && e.target.type === 'search') {
+        e.target.blur();
+        return;
+      }
+      
+      if (e.target.tagName === 'INPUT') return; // Don't trigger when typing
+      
+      if (e.key === 'a') {
+        e.preventDefault();
+        document.getElementById('add-modal').showPopover();
+      } else if (e.key === '/') {
+        e.preventDefault();
+        document.querySelector('input[type="search"]').focus();
+      } else if (e.key === 'Escape') {
+        document.getElementById('add-modal').hidePopover?.();
+      }
+    });
+
+    function openModalWithFile(file) {
+      const modal = document.getElementById('add-modal');
+      modal.showPopover();
+      const fileInput = modal.querySelector('input[type="file"]');
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      fileInput.files = dt.files;
+    }
+
+    // Load on start
+    loadMemes();
+    loadTags();
+  </script>
+</body>
+</html>
