@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,6 +12,9 @@ import (
 	"strings"
 	"time"
 )
+
+//go:embed static/*
+var staticFS embed.FS
 
 type Meme struct {
 	ID       string   `json:"id"`
@@ -36,7 +40,6 @@ func main() {
 	// mux.HandleFunc on the other hand is used if we want a request to run a function. in our case, we run `handleIndex`,
 	// which just basically serve index.html. This allows the html file to be served via http://<url>/
 	// instead of http://<url>/index.html
-	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	mux.Handle("GET /images/", http.StripPrefix("/images/", http.FileServer(http.Dir("images"))))
 	mux.HandleFunc("GET /", handleIndex)
 	mux.HandleFunc("GET /api/memes", handleListMemes)
@@ -54,7 +57,12 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	// we call the ServeFile immediately.
 	// also, the HandleFunc expects a function with exactly this shape:
 	// func(w http.ResponseWriter, r *http.Request)
-	http.ServeFile(w, r, "static/index.html")
+	data, err := staticFS.ReadFile("static/index.html")
+	if err != nil {
+		http.Error(w, "index html file not found", http.StatusInternalServerError)
+	}
+	w.Header().Set("Content-Type", "text/html")
+	_, _ = w.Write(data)
 }
 
 func handleListMemes(w http.ResponseWriter, _ *http.Request) {
@@ -90,6 +98,7 @@ func handleCreateMeme(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error retrieving file", http.StatusBadRequest)
 		return
 	}
+	//nolint:errcheck
 	defer file.Close()
 
 	name, rawTags := r.FormValue("name"), strings.Split(r.FormValue("tags"), ",")
