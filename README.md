@@ -8,6 +8,8 @@ Built in Go, HTML, CSS, and yes... JS
 
 ### USAGE
 
+download the release, unzip it, then run `./memer-app`. you can then access the app via `http://localhost:6942` (this is served via `0.0.0.0`)
+
 ### TODO
 
 > though fully working, i still wanna do the following for learning purposes.
