@@ -45,6 +45,12 @@ func main() {
 	mux.HandleFunc("GET /api/memes", handleListMemes)
 	mux.HandleFunc("POST /api/memes", handleCreateMeme)
 
+	if err := os.MkdirAll("images", 0o755); err != nil {
+		log.Printf("handleCreateMeme Error: %v", err)
+		http.Error(w, "failed to create images dir", http.StatusBadRequest)
+		return
+	}
+
 	if err := http.ListenAndServe(":6942", mux); err != nil {
 		// TODO: probably better logging. Fatalf?
 		panic(err)
