@@ -13,13 +13,14 @@
     <h2>add a meme</h2>
     <form method="POST" action="/api/memes" enctype="multipart/form-data">
       <label>name
-        <input type="text" name="name" placeholder="doge.jpg">
+        <input type="text" name="name" placeholder="doge.jpg" required>
+        <span class="error-msg" id="name-error"></span>
       </label>
       <label>upload
-        <input type="file" name="file" accept="image/*">
+        <input type="file" name="file" accept="image/*" required>
       </label>
       <label>tags (comma separated)
-        <input type="text" name="tags" placeholder="funny, cat, classic">
+        <input type="text" name="tags" placeholder="funny, cat, classic" required>
       </label>
       <div class="modal-actions">
         <button type="submit" >save</button>
@@ -183,6 +184,31 @@
       dt.items.add(file);
       fileInput.files = dt.files;
     }
+
+    // Surface backend errors
+    const form = document.querySelector('#add-modal form');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      document.getElementById('name-error').classList.remove('visible');
+      
+      const res = await fetch('/api/memes', {
+        method: 'POST',
+        body: new FormData(form)
+      });
+      
+      if (res.ok) {
+        window.location.href = '/';
+      } else {
+        const msg = await res.text();
+        document.getElementById('name-error').textContent = msg;
+        document.getElementById('name-error').classList.add('visible');
+      }
+    });
+
+    // Clear error on input
+    form.querySelector('input[name="name"]').addEventListener('input', () => {
+      document.getElementById('name-error').classList.remove('visible');
+    });
 
     // Load on start
     loadMemes();
