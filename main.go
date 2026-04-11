@@ -127,6 +127,7 @@ func handleCreateMeme(w http.ResponseWriter, r *http.Request) {
 	for _, m := range memes {
 		if strings.EqualFold(m.Name, name) {
 			http.Error(w, "meme with this name already exists", http.StatusConflict)
+			return
 		}
 	}
 
