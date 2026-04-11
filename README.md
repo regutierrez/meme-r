@@ -4,7 +4,9 @@ A simple as f\*ck web app for storing your memes/memeable pics. Made as a projec
 
 Built in Go, HTML, CSS, and yes... JS
 
-> Handwrote Go stuff. But I'd rather eat unseasoned overcooked boiled chicken breast than write HTML and CSS
+> Handwrote Go stuff, vibeslopped the others. I'd rather eat unseasoned overcooked boiled chicken breast than write HTML and CSS
+
+### USAGE
 
 ### TODO
 

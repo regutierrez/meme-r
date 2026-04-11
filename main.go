@@ -46,8 +46,7 @@ func main() {
 	mux.HandleFunc("POST /api/memes", handleCreateMeme)
 
 	if err := os.MkdirAll("images", 0o755); err != nil {
-		log.Printf("handleCreateMeme Error: %v", err)
-		http.Error(w, "failed to create images dir", http.StatusBadRequest)
+		log.Fatalf("Failed to create images dir: %v", err)
 		return
 	}
 
