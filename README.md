@@ -1,6 +1,6 @@
 # Meme-r
 
-A simple as f\*ck web app for storing your memes/memeable pics. Made as a project submission for Boot.dev
+A simple as f\*ck web app for storing your memes/memeable pics. Made as a project submission for Boot.dev. This is a single binary-- just run `memer-app` and you're good to go.
 
 Built in Go, HTML, CSS, and yes... JS
 
@@ -14,6 +14,7 @@ download the release, unzip it, then run `./memer-app`. you can then access the 
 
 > though fully working, i still wanna do the following for learning purposes.
 
-- well, clean up the todos in here
 - probably add handwritten tests
 - idk if possible, but do it in html only..? would probably need html/template though so probably not
+- ability to click a thumbnail and display it fullscreen in a modal
+- cleanup todos
