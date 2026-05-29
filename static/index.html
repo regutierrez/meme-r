@@ -1,514 +1,655 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>meme-r</title>
-  <style>
-/* ============ RESET & BASE ============ */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>meme-r</title>
+    <style>
+      /* ============ RESET & BASE ============ */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-html, body {
-  height: 100%;
-  overflow: hidden;
-  font-size: 14px;
-}
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        font-size: 14px;
+      }
 
-/* ============ LAYOUT ============ */
-.app {
-  display: flex;
-  height: 100%;
-  width: 100%;
-}
+      /* ============ LAYOUT ============ */
+      .app {
+        display: flex;
+        height: 100%;
+        width: 100%;
+      }
 
-/* ============ SIDEBAR ============ */
-.sidebar {
-  width: 20%;
-  min-width: 180px;
-  border-right: 2px solid #000;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  overflow-y: auto;
-  scrollbar-width: none;          /* firefox */
-}
-.sidebar::-webkit-scrollbar {
-  display: none;                  /* chrome/safari */
-}
+      /* ============ SIDEBAR ============ */
+      .sidebar {
+        width: 20%;
+        min-width: 180px;
+        border-right: 2px solid #000;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        overflow-y: auto;
+        scrollbar-width: none; /* firefox */
+      }
+      .sidebar::-webkit-scrollbar {
+        display: none; /* chrome/safari */
+      }
 
-.logo {
-  font-size: 1.6rem;
-  text-align: center;
-}
+      .logo {
+        font-size: 1.6rem;
+        text-align: center;
+      }
 
-.add-btn {
-  font-family: inherit;
-  font-size: 0.95rem;
-  padding: 0.4rem;
-  cursor: pointer;
-  border: 2px solid #000;
-  background: #fff;
-}
-.add-btn:hover {
-  background: #f0f0f0;
-}
+      .add-btn {
+        font-family: inherit;
+        font-size: 0.95rem;
+        padding: 0.4rem;
+        cursor: pointer;
+        border: 2px solid #000;
+        background: #fff;
+      }
+      .add-btn:hover {
+        background: #f0f0f0;
+      }
 
-/* sidebar sections */
-.sidebar-section {
-  border: none;
-}
-.sidebar-section summary {
-  cursor: pointer;
-  font-weight: bold;
-  margin-bottom: 0.4rem;
-  list-style: none;
-}
-.sidebar-section summary::before {
-  content: '▸ ';
-}
-.sidebar-section[open] summary::before {
-  content: '▾ ';
-}
+      /* sidebar sections */
+      .sidebar-section {
+        border: none;
+      }
+      .sidebar-section summary {
+        cursor: pointer;
+        font-weight: bold;
+        margin-bottom: 0.4rem;
+        list-style: none;
+      }
+      .sidebar-section summary::before {
+        content: "▸ ";
+      }
+      .sidebar-section[open] summary::before {
+        content: "▾ ";
+      }
 
-.search-label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  font-weight: bold;
-}
-.search-label input {
-  font-family: inherit;
-  padding: 0.3rem;
-  border: 1px solid #000;
-}
+      .search-label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        font-weight: bold;
+      }
+      .search-label input {
+        font-family: inherit;
+        padding: 0.3rem;
+        border: 1px solid #000;
+      }
 
-.tag-filters,
-.sort-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-.tag-filters label,
-.sort-options label {
-  cursor: pointer;
-}
+      .tag-filters,
+      .sort-options {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+      .tag-filters label,
+      .sort-options label {
+        cursor: pointer;
+      }
 
-/* ============ STASH (gallery) ============ */
-.stash {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 1rem;
-  overflow: hidden;
-}
+      /* ============ STASH (gallery) ============ */
+      .stash {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
+        overflow: hidden;
+      }
 
-.stash-title {
-  font-size: 1.3rem;
-  margin-bottom: 0.75rem;
-}
+      .stash-title {
+        font-size: 1.3rem;
+        margin-bottom: 0.75rem;
+      }
 
-/* hide radio inputs for pagination */
-.page-radio {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
+      /* hide radio inputs for pagination */
+      .page-radio {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
 
-/* all pages hidden by default */
-.page {
-  display: none;
-  flex: 1;
-  overflow: hidden;
-}
+      /* all pages hidden by default */
+      .page {
+        display: none;
+        flex: 1;
+        overflow: hidden;
+      }
 
-/* show the active page based on checked radio */
-#page1:checked ~ .page-1 { display: grid; }
-#page2:checked ~ .page-2 { display: grid; }
-#page3:checked ~ .page-3 { display: grid; }
+      /* show the active page based on checked radio */
+      #page1:checked ~ .page-1 {
+        display: grid;
+      }
+      #page2:checked ~ .page-2 {
+        display: grid;
+      }
+      #page3:checked ~ .page-3 {
+        display: grid;
+      }
 
-/* grid for cards: 4 columns × 3 rows = 12 */
-.page {
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  gap: 0.4rem;
-  align-content: start;
-}
+      /* grid for cards: 4 columns × 3 rows = 12 */
+      .page {
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+        gap: 0.4rem;
+        align-content: start;
+      }
 
-/* ============ PAGINATION CONTROLS ============ */
-.pagination {
-  display: flex;
-  justify-content: center;
-  gap: 0.4rem;
-  padding-top: 0.75rem;
-}
+      /* ============ PAGINATION CONTROLS ============ */
+      .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 0.4rem;
+        padding-top: 0.75rem;
+      }
 
-.page-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border: 2px solid #000;
-  cursor: pointer;
-  font-weight: bold;
-  user-select: none;
-}
-.page-btn:hover {
-  background: #000;
-  color: #fff;
-}
+      .page-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border: 2px solid #000;
+        cursor: pointer;
+        font-weight: bold;
+        user-select: none;
+      }
+      .page-btn:hover {
+        background: #000;
+        color: #fff;
+      }
 
-/* highlight active page button */
-#page1:checked ~ .pagination label[for="page1"],
-#page2:checked ~ .pagination label[for="page2"],
-#page3:checked ~ .pagination label[for="page3"] {
-  background: #000;
-  color: #fff;
-}
+      /* highlight active page button */
+      #page1:checked ~ .pagination label[for="page1"],
+      #page2:checked ~ .pagination label[for="page2"],
+      #page3:checked ~ .pagination label[for="page3"] {
+        background: #000;
+        color: #fff;
+      }
 
-/* ============ THUMBNAIL CARDS ============ */
-.card {
-  aspect-ratio: 1 / 1;
-  border: 1px solid #000;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  cursor: pointer;
-  min-width: 0;
-  max-height: 175px;
-}
+      /* ============ THUMBNAIL CARDS ============ */
+      .card {
+        aspect-ratio: 1 / 1;
+        border: 1px solid #000;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        cursor: pointer;
+        min-width: 0;
+        max-height: 175px;
+      }
 
-.card img {
-  flex: 1;
-  width: 100%;
-  object-fit: cover;
-  min-height: 0;
-  /* placeholder bg when image fails */
-  background: #ddd;
-}
+      .card img {
+        flex: 1;
+        width: 100%;
+        object-fit: cover;
+        min-height: 0;
+        /* placeholder bg when image fails */
+        background: #ddd;
+      }
 
-.card-info {
-  padding: 0.25rem 0.35rem;
-  border-top: 1px solid #000;
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  font-size: 0.9rem;
-  line-height: 1.2;
-}
+      .card-info {
+        padding: 0.25rem 0.35rem;
+        border-top: 1px solid #000;
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+        font-size: 0.9rem;
+        line-height: 1.2;
+      }
 
-.card-name {
-  font-weight: bold;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+      .card-name {
+        font-weight: bold;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
 
-.card-tags {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  opacity: 0.7;
-}
+      .card-tags {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        opacity: 0.7;
+      }
 
-.card-date {
-  opacity: 0.5;
-  font-size: 0.85rem;
-}
+      .card-date {
+        opacity: 0.5;
+        font-size: 0.85rem;
+      }
 
-/* ============ ADD MEME MODAL ============ */
-#add-modal {
-  border: 2px solid #000;
-  padding: 1.5rem;
-  font-family: inherit;
-  max-width: 360px;
-  width: 90%;
-  position: fixed;
-  inset: 0;
-  margin: auto;
-}
-#add-modal::backdrop {
-  background: rgba(0, 0, 0, 0.4);
-}
-#add-modal h2 {
-  margin-bottom: 1rem;
-}
-#add-modal form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-#add-modal label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  font-weight: bold;
-}
-#add-modal input {
-  font-family: inherit;
-  padding: 0.3rem;
-  border: 1px solid #000;
-}
-.modal-actions {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
-}
-.modal-actions button {
-  font-family: inherit;
-  padding: 0.4rem 0.8rem;
-  border: 2px solid #000;
-  background: #fff;
-  cursor: pointer;
-}
-.modal-actions button:hover {
-  background: #000;
-  color: #fff;
-}
+      /* ============ ADD MEME MODAL ============ */
+      #add-modal {
+        border: 2px solid #000;
+        padding: 1.5rem;
+        font-family: inherit;
+        max-width: 360px;
+        width: 90%;
+        position: fixed;
+        inset: 0;
+        margin: auto;
+      }
+      #add-modal::backdrop {
+        background: rgba(0, 0, 0, 0.4);
+      }
+      #add-modal h2 {
+        margin-bottom: 1rem;
+      }
+      #add-modal form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      #add-modal label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+        font-weight: bold;
+      }
+      #add-modal input {
+        font-family: inherit;
+        padding: 0.3rem;
+        border: 1px solid #000;
+      }
+      .upload-preview {
+        display: none;
+        width: 100%;
+        max-height: 200px;
+        object-fit: contain;
+        background: #ddd;
+        border: 1px solid #000;
+      }
+      .upload-preview.visible {
+        display: block;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+      }
+      .modal-actions button {
+        font-family: inherit;
+        padding: 0.4rem 0.8rem;
+        border: 2px solid #000;
+        background: #fff;
+        cursor: pointer;
+      }
+      .modal-actions button:hover {
+        background: #000;
+        color: #fff;
+      }
 
-.error-msg {
-  color: #c00;
-  font-size: 0.8rem;
-  font-weight: normal;
-  display: none;
-}
-.error-msg.visible {
-  display: block;
-}
+      .error-msg {
+        color: #c00;
+        font-size: 0.8rem;
+        font-weight: normal;
+        display: none;
+      }
+      .error-msg.visible {
+        display: block;
+      }
 
-/* prevent body scroll when modal is open */
-body:has(#add-modal:popover-open) {
-  overflow: hidden;
-}
+      /* prevent body scroll when modal is open */
+      body:has(dialog:popover-open) {
+        overflow: hidden;
+      }
 
-/* drag and drop feedback */
-body.drag-over::after {
-  content: 'drop image here';
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  pointer-events: none;
-  z-index: 9999;
-}
-  </style>
-</head>
-<body>
+      /* ============ PREVIEW MODAL ============ */
+      #preview-modal {
+        border: 2px solid #000;
+        padding: 0;
+        font-family: inherit;
+        max-width: 520px;
+        width: 90%;
+        position: fixed;
+        inset: 0;
+        margin: auto;
+      }
+      #preview-modal::backdrop {
+        background: rgba(0, 0, 0, 0.4);
+      }
+      .preview-content {
+        display: flex;
+        flex-direction: column;
+      }
+      #preview-img {
+        width: 100%;
+        max-height: 60vh;
+        object-fit: contain;
+        background: #ddd;
+        border-bottom: 2px solid #000;
+      }
+      .preview-info {
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+      }
+      .preview-name {
+        font-weight: bold;
+        font-size: 1.1rem;
+      }
+      .preview-tags {
+        opacity: 0.7;
+      }
+      .preview-date {
+        opacity: 0.5;
+        font-size: 0.9rem;
+      }
+      #preview-modal .modal-actions {
+        padding: 0 1rem 1rem 1rem;
+      }
 
-  <!-- ============ ADD MEME MODAL (popover API) ============ -->
-  <dialog id="add-modal" popover>
-    <h2>add a meme</h2>
-    <form method="POST" action="/api/memes" enctype="multipart/form-data">
-      <label>name
-        <input type="text" name="name" placeholder="doge.jpg" required>
-        <span class="error-msg" id="name-error"></span>
-      </label>
-      <label>upload
-        <input type="file" name="file" accept="image/*" required>
-      </label>
-      <label>tags (comma separated)
-        <input type="text" name="tags" placeholder="funny, cat, classic" required>
-      </label>
-      <div class="modal-actions">
-        <button type="submit" >save</button>
-        <button type="button" popovertarget="add-modal" popovertargetaction="hide">cancel</button>
-      </div>
-    </form>
-  </dialog>
-
-  <!-- ============ MAIN LAYOUT ============ -->
-  <div class="app">
-
-    <!-- ======== SIDEBAR ======== -->
-    <aside class="sidebar">
-      <h1 class="logo">meme-r</h1>
-
-      <!-- search -->
-      <div class="sidebar-section">
-        <label class="search-label">search
-          <input type="search" placeholder="title or tag...">
+      /* drag and drop feedback */
+      body.drag-over::after {
+        content: "drop image here";
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        pointer-events: none;
+        z-index: 9999;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ============ ADD MEME MODAL (popover API) ============ -->
+    <dialog id="add-modal" popover>
+      <h2>add a meme</h2>
+      <form method="POST" action="/api/memes" enctype="multipart/form-data">
+        <label
+          >name
+          <input type="text" name="name" placeholder="doge.jpg" required />
+          <span class="error-msg" id="name-error"></span>
         </label>
-      </div>
-
-      <!-- filter by tag -->
-      <details class="sidebar-section" open>
-        <summary>filter by tag</summary>
-        <div class="tag-filters">
-          <!-- tags loaded from memes.json -->
+        <label
+          >upload
+          <input type="file" name="file" accept="image/*" required />
+        </label>
+        <img id="upload-preview" class="upload-preview" alt="preview" />
+        <label
+          >tags (comma separated)
+          <input type="text" name="tags" placeholder="funny, cat, classic" required />
+        </label>
+        <div class="modal-actions">
+          <button type="submit">save</button>
+          <button type="button" popovertarget="add-modal" popovertargetaction="hide">cancel</button>
         </div>
-      </details>
+      </form>
+    </dialog>
 
-      <!-- sort -->
-      <details class="sidebar-section" open>
-        <summary>sort</summary>
-        <div class="sort-options">
-          <label><input type="radio" name="sort" value="date-new" checked> newest first</label>
-          <label><input type="radio" name="sort" value="date-old"> oldest first</label>
-          <label><input type="radio" name="sort" value="az"> a → z</label>
-          <label><input type="radio" name="sort" value="za"> z → a</label>
+    <!-- ============ PREVIEW MODAL (popover API) ============ -->
+    <dialog id="preview-modal" popover>
+      <div class="preview-content">
+        <img id="preview-img" src="" alt="" />
+        <div class="preview-info">
+          <div id="preview-name" class="preview-name"></div>
+          <div id="preview-tags" class="preview-tags"></div>
+          <div id="preview-date" class="preview-date"></div>
         </div>
-      </details>
-    </aside>
-
-    <!-- ======== GALLERY (the stash) ======== -->
-    <main class="stash">
-      <h2 class="stash-title">the stash</h2>
-
-      <!-- pagination radios (must be siblings of .page for ~ selector) -->
-      <input type="radio" name="page" id="page1" class="page-radio" checked>
-
-      <!-- PAGE 1 -->
-      <div class="page page-1">
+        <div class="modal-actions">
+          <button type="button" id="copy-btn">copy to clipboard</button>
+          <button type="button" popovertarget="preview-modal" popovertargetaction="hide">
+            close
+          </button>
+        </div>
       </div>
+    </dialog>
 
-      <!-- pagination controls -->
-      <nav class="pagination" aria-label="pagination">
-        <label for="page1" class="page-btn">1</label>
-      </nav>
+    <!-- ============ MAIN LAYOUT ============ -->
+    <div class="app">
+      <!-- ======== SIDEBAR ======== -->
+      <aside class="sidebar">
+        <h1 class="logo">meme-r</h1>
 
-    </main>
-  </div>
+        <!-- search -->
+        <div class="sidebar-section">
+          <label class="search-label"
+            >search
+            <input type="search" placeholder="title or tag..." />
+          </label>
+        </div>
 
-  <script>
-    async function loadMemes() {
-      try {
-        const res = await fetch('/api/memes');
-        const memes = await res.json();
-        const container = document.querySelector('.page-1');
-        
-        if (memes.length === 0) {
-          container.innerHTML = '<p class="empty-msg">no memes in the stash yet. add one!</p>';
-          return;
-        }
+        <!-- filter by tag -->
+        <details class="sidebar-section" open>
+          <summary>filter by tag</summary>
+          <div class="tag-filters">
+            <!-- tags loaded from memes.json -->
+          </div>
+        </details>
 
-        container.innerHTML = memes.map(m => `
+        <!-- sort -->
+        <details class="sidebar-section" open>
+          <summary>sort</summary>
+          <div class="sort-options">
+            <label><input type="radio" name="sort" value="date-new" checked /> newest first</label>
+            <label><input type="radio" name="sort" value="date-old" /> oldest first</label>
+            <label><input type="radio" name="sort" value="az" /> a → z</label>
+            <label><input type="radio" name="sort" value="za" /> z → a</label>
+          </div>
+        </details>
+      </aside>
+
+      <!-- ======== GALLERY (the stash) ======== -->
+      <main class="stash">
+        <h2 class="stash-title">the stash</h2>
+
+        <!-- pagination radios (must be siblings of .page for ~ selector) -->
+        <input type="radio" name="page" id="page1" class="page-radio" checked />
+
+        <!-- PAGE 1 -->
+        <div class="page page-1"></div>
+
+        <!-- pagination controls -->
+        <nav class="pagination" aria-label="pagination">
+          <label for="page1" class="page-btn">1</label>
+        </nav>
+      </main>
+    </div>
+
+    <script>
+      async function loadMemes() {
+        try {
+          const res = await fetch("/api/memes");
+          const memes = await res.json();
+          const container = document.querySelector(".page-1");
+
+          if (memes.length === 0) {
+            container.innerHTML = '<p class="empty-msg">no memes in the stash yet. add one!</p>';
+            return;
+          }
+
+          container.innerHTML = memes
+            .map(
+              (m) => `
           <article class="card" data-id="${m.id}">
             <img src="${m.image_url}" alt="${m.name}" loading="lazy">
             <div class="card-info">
               <div class="card-name">${m.name}</div>
               <div class="card-tags">
-                ${m.tags.map(t => `#${t}`).join(' ')}
+                ${m.tags.map((t) => `#${t}`).join(" ")}
               </div>
               <div class="card-date">${new Date(m.added_at).toLocaleDateString()}</div>
             </div>
           </article>
-        `).join('');
-      } catch (err) {
-        console.error("failed to load memes:", err);
+        `,
+            )
+            .join("");
+        } catch (err) {
+          console.error("failed to load memes:", err);
+        }
       }
-    }
-    async function loadTags() {
-      try {
-        const res = await fetch('/api/memes');
-        const memes = await res.json();
-        
-        // Extract unique tags from all memes
-        const tags = [...new Set(memes.flatMap(m => m.tags || []))].sort();
-        
-        const container = document.querySelector('.tag-filters');
-        
-        if (tags.length === 0) {
-          container.innerHTML = '<p class="empty-tags">no tags yet</p>';
+      async function loadTags() {
+        try {
+          const res = await fetch("/api/memes");
+          const memes = await res.json();
+
+          // Extract unique tags from all memes
+          const tags = [...new Set(memes.flatMap((m) => m.tags || []))].sort();
+
+          const container = document.querySelector(".tag-filters");
+
+          if (tags.length === 0) {
+            container.innerHTML = '<p class="empty-tags">no tags yet</p>';
+            return;
+          }
+
+          container.innerHTML = tags
+            .map((t) => `<label><input type="checkbox" name="tag" value="${t}"> ${t}</label>`)
+            .join("");
+        } catch (err) {
+          console.error("failed to load tags:", err);
+        }
+      }
+
+      // Paste handler: paste image anywhere to open modal
+      window.addEventListener("paste", (e) => {
+        const file = Array.from(e.clipboardData.files).find((f) => f.type.startsWith("image/"));
+        if (!file) return;
+        openModalWithFile(file);
+      });
+
+      // Drag and drop handlers
+      window.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        document.body.classList.add("drag-over");
+      });
+      window.addEventListener("dragleave", (e) => {
+        if (e.target === document.body) document.body.classList.remove("drag-over");
+      });
+      window.addEventListener("drop", (e) => {
+        e.preventDefault();
+        document.body.classList.remove("drag-over");
+        const file = Array.from(e.dataTransfer.files).find((f) => f.type.startsWith("image/"));
+        if (file) openModalWithFile(file);
+      });
+
+      // Keyboard shortcuts
+      window.addEventListener("keydown", (e) => {
+        // ESC removes focus from search
+        if (e.key === "Escape" && e.target.type === "search") {
+          e.target.blur();
           return;
         }
-        
-        container.innerHTML = tags.map(t => 
-          `<label><input type="checkbox" name="tag" value="${t}"> ${t}</label>`
-        ).join('');
-      } catch (err) {
-        console.error("failed to load tags:", err);
-      }
-    }
 
-    // Paste handler: paste image anywhere to open modal
-    window.addEventListener('paste', (e) => {
-      const file = Array.from(e.clipboardData.files).find(f => f.type.startsWith('image/'));
-      if (!file) return;
-      openModalWithFile(file);
-    });
+        if (e.target.tagName === "INPUT") return; // Don't trigger when typing
 
-    // Drag and drop handlers
-    window.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      document.body.classList.add('drag-over');
-    });
-    window.addEventListener('dragleave', (e) => {
-      if (e.target === document.body) document.body.classList.remove('drag-over');
-    });
-    window.addEventListener('drop', (e) => {
-      e.preventDefault();
-      document.body.classList.remove('drag-over');
-      const file = Array.from(e.dataTransfer.files).find(f => f.type.startsWith('image/'));
-      if (file) openModalWithFile(file);
-    });
-
-    // Keyboard shortcuts
-    window.addEventListener('keydown', (e) => {
-      // ESC removes focus from search
-      if (e.key === 'Escape' && e.target.type === 'search') {
-        e.target.blur();
-        return;
-      }
-      
-      if (e.target.tagName === 'INPUT') return; // Don't trigger when typing
-      
-      if (e.key === 'a') {
-        e.preventDefault();
-        document.getElementById('add-modal').showPopover();
-      } else if (e.key === '/') {
-        e.preventDefault();
-        document.querySelector('input[type="search"]').focus();
-      } else if (e.key === 'Escape') {
-        document.getElementById('add-modal').hidePopover?.();
-      }
-    });
-
-    function openModalWithFile(file) {
-      const modal = document.getElementById('add-modal');
-      modal.showPopover();
-      const fileInput = modal.querySelector('input[type="file"]');
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      fileInput.files = dt.files;
-    }
-
-    // Surface backend errors
-    const form = document.querySelector('#add-modal form');
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      document.getElementById('name-error').classList.remove('visible');
-      
-      const res = await fetch('/api/memes', {
-        method: 'POST',
-        body: new FormData(form)
+        if (e.key === "a") {
+          e.preventDefault();
+          document.getElementById("add-modal").showPopover();
+        } else if (e.key === "/") {
+          e.preventDefault();
+          document.querySelector('input[type="search"]').focus();
+        } else if (e.key === "Escape") {
+          const modal = document.querySelector("dialog:popover-open");
+          if (modal) modal.hidePopover();
+        }
       });
-      
-      if (res.ok) {
-        window.location.href = '/';
-      } else {
-        const msg = await res.text();
-        document.getElementById('name-error').textContent = msg;
-        document.getElementById('name-error').classList.add('visible');
+
+      function openModalWithFile(file) {
+        const modal = document.getElementById("add-modal");
+        modal.showPopover();
+        const fileInput = modal.querySelector('input[type="file"]');
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+        showUploadPreview(file);
       }
-    });
 
-    // Clear error on input
-    form.querySelector('input[name="name"]').addEventListener('input', () => {
-      document.getElementById('name-error').classList.remove('visible');
-    });
+      function showUploadPreview(file) {
+        const preview = document.getElementById("upload-preview");
+        if (!file || !file.type.startsWith("image/")) {
+          preview.classList.remove("visible");
+          preview.src = "";
+          return;
+        }
+        preview.src = URL.createObjectURL(file);
+        preview.classList.add("visible");
+      }
 
-    // Load on start
-    loadMemes();
-    loadTags();
-  </script>
-</body>
+      // Show preview when file input changes
+      document.querySelector('#add-modal input[type="file"]').addEventListener("change", (e) => {
+        showUploadPreview(e.target.files[0]);
+      });
+
+      // Surface backend errors
+      const form = document.querySelector("#add-modal form");
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        document.getElementById("name-error").classList.remove("visible");
+
+        const res = await fetch("/api/memes", {
+          method: "POST",
+          body: new FormData(form),
+        });
+
+        if (res.ok) {
+          window.location.href = "/";
+        } else {
+          const msg = await res.text();
+          document.getElementById("name-error").textContent = msg;
+          document.getElementById("name-error").classList.add("visible");
+        }
+      });
+
+      // Clear error on input
+      form.querySelector('input[name="name"]').addEventListener("input", () => {
+        document.getElementById("name-error").classList.remove("visible");
+      });
+
+      // Card click → preview modal
+      document.querySelector(".stash").addEventListener("click", (e) => {
+        const card = e.target.closest(".card");
+        if (!card) return;
+
+        const img = card.querySelector("img");
+        document.getElementById("preview-img").src = img.src;
+        document.getElementById("preview-img").alt = img.alt;
+        document.getElementById("preview-name").textContent =
+          card.querySelector(".card-name").textContent;
+        document.getElementById("preview-tags").textContent =
+          card.querySelector(".card-tags").textContent;
+        document.getElementById("preview-date").textContent =
+          card.querySelector(".card-date").textContent;
+
+        document.getElementById("preview-modal").showPopover();
+      });
+
+      // Copy image to clipboard
+      document.getElementById("copy-btn").addEventListener("click", async () => {
+        const img = document.getElementById("preview-img");
+        try {
+          const res = await fetch(img.src);
+          const blob = await res.blob();
+          await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+          const btn = document.getElementById("copy-btn");
+          const original = btn.textContent;
+          btn.textContent = "copied!";
+          setTimeout(() => (btn.textContent = original), 1500);
+        } catch (err) {
+          console.error("failed to copy image:", err);
+        }
+      });
+
+      // Load on start
+      loadMemes();
+      loadTags();
+    </script>
+  </body>
 </html>
