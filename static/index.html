@@ -241,9 +241,7 @@
         inset: 0;
         margin: auto;
       }
-      #add-modal::backdrop {
-        background: rgba(0, 0, 0, 0.4);
-      }
+
       #add-modal h2 {
         margin-bottom: 1rem;
       }
@@ -306,6 +304,34 @@
         overflow: hidden;
       }
 
+      /* ============ POPOVER OPEN/CLOSE TRANSITIONS ============ */
+      /* @starting-style + allow-discrete replace JS animation toggling */
+      dialog[popover] {
+        opacity: 0;
+        transition: opacity 0.15s ease-out, display 0.15s allow-discrete;
+      }
+      dialog[popover]:popover-open {
+        opacity: 1;
+      }
+      @starting-style {
+        dialog[popover]:popover-open {
+          opacity: 0;
+        }
+      }
+
+      dialog[popover]::backdrop {
+        background: rgba(0, 0, 0, 0);
+        transition: background 0.15s, display 0.15s allow-discrete;
+      }
+      dialog[popover]:popover-open::backdrop {
+        background: rgba(0, 0, 0, 0.4);
+      }
+      @starting-style {
+        dialog[popover]:popover-open::backdrop {
+          background: rgba(0, 0, 0, 0);
+        }
+      }
+
       /* ============ PREVIEW MODAL ============ */
       #preview-modal {
         border: 2px solid #000;
@@ -317,9 +343,7 @@
         inset: 0;
         margin: auto;
       }
-      #preview-modal::backdrop {
-        background: rgba(0, 0, 0, 0.4);
-      }
+
       .preview-content {
         display: flex;
         flex-direction: column;
@@ -419,18 +443,18 @@
         <h1 class="logo">meme-r</h1>
 
         <!-- search -->
-        <div class="sidebar-section">
+        <search class="sidebar-section">
           <label class="search-label"
             >search
             <input type="search" placeholder="title or tag..." />
           </label>
-        </div>
+        </search>
 
         <!-- filter by tag -->
         <details class="sidebar-section" open>
           <summary>filter by tag</summary>
           <div class="tag-filters">
-            <!-- tags loaded from memes.json -->
+            <!-- tags loaded dynamically -->
           </div>
         </details>
 
@@ -464,192 +488,203 @@
     </div>
 
     <script>
-      async function loadMemes() {
-        try {
-          const res = await fetch("/api/memes");
-          const memes = await res.json();
-          const container = document.querySelector(".page-1");
+      // ============ DOM REFS ============
+      const dom = {
+        gallery: document.querySelector(".page-1"),
+        tagFilters: document.querySelector(".tag-filters"),
+        addModal: document.getElementById("add-modal"),
+        addForm: document.querySelector("#add-modal form"),
+        addFileInput: document.querySelector('#add-modal input[type="file"]'),
+        nameError: document.getElementById("name-error"),
+        uploadPreview: document.getElementById("upload-preview"),
+        previewModal: document.getElementById("preview-modal"),
+        previewImg: document.getElementById("preview-img"),
+        previewName: document.getElementById("preview-name"),
+        previewTags: document.getElementById("preview-tags"),
+        previewDate: document.getElementById("preview-date"),
+        copyBtn: document.getElementById("copy-btn"),
+        searchInput: document.querySelector('input[type="search"]'),
+        stash: document.querySelector(".stash"),
+      };
 
-          if (memes.length === 0) {
-            container.innerHTML = '<p class="empty-msg">no memes in the stash yet. add one!</p>';
-            return;
-          }
+      // ============ DATA ============
+      async function fetchMemes() {
+        const res = await fetch("/api/memes");
+        if (!res.ok) throw new Error(`fetch memes: ${res.status}`);
+        return res.json();
+      }
 
-          container.innerHTML = memes
-            .map(
-              (m) => `
-          <article class="card" data-id="${m.id}">
+      function renderCard(m) {
+        const date = new Date(m.added_at).toLocaleDateString();
+        const tags = m.tags.map((t) => `#${t}`).join(" ");
+        return `
+          <article class="card"
+            data-id="${m.id}"
+            data-image="${m.image_url}"
+            data-name="${m.name}"
+            data-tags="${tags}"
+            data-date="${date}"
+          >
             <img src="${m.image_url}" alt="${m.name}" loading="lazy">
             <div class="card-info">
               <div class="card-name">${m.name}</div>
-              <div class="card-tags">
-                ${m.tags.map((t) => `#${t}`).join(" ")}
-              </div>
-              <div class="card-date">${new Date(m.added_at).toLocaleDateString()}</div>
+              <div class="card-tags">${tags}</div>
+              <div class="card-date">${date}</div>
             </div>
-          </article>
-        `,
-            )
-            .join("");
-        } catch (err) {
-          console.error("failed to load memes:", err);
-        }
-      }
-      async function loadTags() {
-        try {
-          const res = await fetch("/api/memes");
-          const memes = await res.json();
-
-          // Extract unique tags from all memes
-          const tags = [...new Set(memes.flatMap((m) => m.tags || []))].sort();
-
-          const container = document.querySelector(".tag-filters");
-
-          if (tags.length === 0) {
-            container.innerHTML = '<p class="empty-tags">no tags yet</p>';
-            return;
-          }
-
-          container.innerHTML = tags
-            .map((t) => `<label><input type="checkbox" name="tag" value="${t}"> ${t}</label>`)
-            .join("");
-        } catch (err) {
-          console.error("failed to load tags:", err);
-        }
+          </article>`;
       }
 
-      // Paste handler: paste image anywhere to open modal
-      window.addEventListener("paste", (e) => {
-        const file = Array.from(e.clipboardData.files).find((f) => f.type.startsWith("image/"));
-        if (!file) return;
-        openModalWithFile(file);
-      });
-
-      // Drag and drop handlers
-      window.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        document.body.classList.add("drag-over");
-      });
-      window.addEventListener("dragleave", (e) => {
-        if (e.target === document.body) document.body.classList.remove("drag-over");
-      });
-      window.addEventListener("drop", (e) => {
-        e.preventDefault();
-        document.body.classList.remove("drag-over");
-        const file = Array.from(e.dataTransfer.files).find((f) => f.type.startsWith("image/"));
-        if (file) openModalWithFile(file);
-      });
-
-      // Keyboard shortcuts
-      window.addEventListener("keydown", (e) => {
-        // ESC removes focus from search
-        if (e.key === "Escape" && e.target.type === "search") {
-          e.target.blur();
+      function renderGallery(memes) {
+        if (memes.length === 0) {
+          dom.gallery.innerHTML = '<p class="empty-msg">no memes in the stash yet. add one!</p>';
           return;
         }
+        dom.gallery.innerHTML = memes.map(renderCard).join("");
+      }
 
-        if (e.target.tagName === "INPUT") return; // Don't trigger when typing
-
-        if (e.key === "a") {
-          e.preventDefault();
-          document.getElementById("add-modal").showPopover();
-        } else if (e.key === "/") {
-          e.preventDefault();
-          document.querySelector('input[type="search"]').focus();
-        } else if (e.key === "Escape") {
-          const modal = document.querySelector("dialog:popover-open");
-          if (modal) modal.hidePopover();
+      function renderTags(memes) {
+        const tags = [...new Set(memes.flatMap((m) => m.tags || []))].sort();
+        if (tags.length === 0) {
+          dom.tagFilters.innerHTML = '<p class="empty-tags">no tags yet</p>';
+          return;
         }
-      });
+        dom.tagFilters.innerHTML = tags
+          .map((t) => `<label><input type="checkbox" name="tag" value="${t}"> ${t}</label>`)
+          .join("");
+      }
 
-      function openModalWithFile(file) {
-        const modal = document.getElementById("add-modal");
-        modal.showPopover();
-        const fileInput = modal.querySelector('input[type="file"]');
-        const dt = new DataTransfer();
-        dt.items.add(file);
-        fileInput.files = dt.files;
-        showUploadPreview(file);
+      // ============ ADD MODAL ============
+      function openAddModal(file) {
+        dom.addModal.showPopover();
+        if (file) {
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          dom.addFileInput.files = dt.files;
+          showUploadPreview(file);
+        }
       }
 
       function showUploadPreview(file) {
-        const preview = document.getElementById("upload-preview");
         if (!file || !file.type.startsWith("image/")) {
-          preview.classList.remove("visible");
-          preview.src = "";
+          dom.uploadPreview.classList.remove("visible");
+          dom.uploadPreview.src = "";
           return;
         }
-        preview.src = URL.createObjectURL(file);
-        preview.classList.add("visible");
+        dom.uploadPreview.src = URL.createObjectURL(file);
+        dom.uploadPreview.classList.add("visible");
       }
 
-      // Show preview when file input changes
-      document.querySelector('#add-modal input[type="file"]').addEventListener("change", (e) => {
-        showUploadPreview(e.target.files[0]);
-      });
+      dom.addFileInput.addEventListener("change", (e) => showUploadPreview(e.target.files[0]));
 
-      // Surface backend errors
-      const form = document.querySelector("#add-modal form");
-      form.addEventListener("submit", async (e) => {
+      dom.addForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        document.getElementById("name-error").classList.remove("visible");
+        dom.nameError.classList.remove("visible");
 
-        const res = await fetch("/api/memes", {
-          method: "POST",
-          body: new FormData(form),
-        });
+        const res = await fetch("/api/memes", { method: "POST", body: new FormData(dom.addForm) });
 
         if (res.ok) {
           window.location.href = "/";
         } else {
-          const msg = await res.text();
-          document.getElementById("name-error").textContent = msg;
-          document.getElementById("name-error").classList.add("visible");
+          dom.nameError.textContent = await res.text();
+          dom.nameError.classList.add("visible");
         }
       });
 
-      // Clear error on input
-      form.querySelector('input[name="name"]').addEventListener("input", () => {
-        document.getElementById("name-error").classList.remove("visible");
+      dom.addForm.querySelector('input[name="name"]').addEventListener("input", () => {
+        dom.nameError.classList.remove("visible");
       });
 
-      // Card click → preview modal
-      document.querySelector(".stash").addEventListener("click", (e) => {
+      // ============ PREVIEW MODAL ============
+      function openPreview(card) {
+        dom.previewImg.src = card.dataset.image;
+        dom.previewImg.alt = card.dataset.name;
+        dom.previewName.textContent = card.dataset.name;
+        dom.previewTags.textContent = card.dataset.tags;
+        dom.previewDate.textContent = card.dataset.date;
+        dom.previewModal.showPopover();
+      }
+
+      dom.stash.addEventListener("click", (e) => {
         const card = e.target.closest(".card");
         if (!card) return;
-
-        const img = card.querySelector("img");
-        document.getElementById("preview-img").src = img.src;
-        document.getElementById("preview-img").alt = img.alt;
-        document.getElementById("preview-name").textContent =
-          card.querySelector(".card-name").textContent;
-        document.getElementById("preview-tags").textContent =
-          card.querySelector(".card-tags").textContent;
-        document.getElementById("preview-date").textContent =
-          card.querySelector(".card-date").textContent;
-
-        document.getElementById("preview-modal").showPopover();
+        openPreview(card);
       });
 
-      // Copy image to clipboard
-      document.getElementById("copy-btn").addEventListener("click", async () => {
-        const img = document.getElementById("preview-img");
+      // ============ CLIPBOARD ============
+      async function copyImageToClipboard(url) {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+      }
+
+      dom.copyBtn.addEventListener("click", async () => {
         try {
-          const res = await fetch(img.src);
-          const blob = await res.blob();
-          await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-          const btn = document.getElementById("copy-btn");
-          const original = btn.textContent;
-          btn.textContent = "copied!";
-          setTimeout(() => (btn.textContent = original), 1500);
+          await copyImageToClipboard(dom.previewImg.src);
+          const orig = dom.copyBtn.textContent;
+          dom.copyBtn.textContent = "copied!";
+          setTimeout(() => (dom.copyBtn.textContent = orig), 1500);
         } catch (err) {
           console.error("failed to copy image:", err);
         }
       });
 
-      // Load on start
-      loadMemes();
-      loadTags();
+      // ============ KEYBOARD SHORTCUTS ============
+      // Note: Escape to close popovers is handled natively by the popover API (light-dismiss).
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && e.target.type === "search") {
+          e.target.blur();
+          return;
+        }
+        if (e.target.tagName === "INPUT") return;
+
+        if (e.key === "a") {
+          e.preventDefault();
+          dom.addModal.showPopover();
+        } else if (e.key === "/") {
+          e.preventDefault();
+          dom.searchInput.focus();
+        }
+      });
+
+      // ============ DRAG & DROP ============
+      function handleImageFile(file) {
+        if (!file || !file.type.startsWith("image/")) return;
+        openAddModal(file);
+      }
+
+      window.addEventListener("paste", (e) => {
+        const file = Array.from(e.clipboardData.files).find((f) => f.type.startsWith("image/"));
+        if (file) handleImageFile(file);
+      });
+
+      window.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        document.body.classList.add("drag-over");
+      });
+
+      window.addEventListener("dragleave", (e) => {
+        if (e.target === document.body) document.body.classList.remove("drag-over");
+      });
+
+      window.addEventListener("drop", (e) => {
+        e.preventDefault();
+        document.body.classList.remove("drag-over");
+        const file = Array.from(e.dataTransfer.files).find((f) => f.type.startsWith("image/"));
+        if (file) handleImageFile(file);
+      });
+
+      // ============ INIT ============
+      async function init() {
+        try {
+          const memes = await fetchMemes();
+          renderGallery(memes);
+          renderTags(memes);
+        } catch (err) {
+          console.error("init failed:", err);
+        }
+      }
+
+      init();
     </script>
   </body>
 </html>
