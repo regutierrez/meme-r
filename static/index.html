@@ -256,7 +256,8 @@
         gap: 0.15rem;
         font-weight: bold;
       }
-      #add-modal input {
+      #add-modal input[type="text"],
+      #add-modal input[type="search"] {
         font-family: inherit;
         padding: 0.3rem;
         border: 1px solid #000;
@@ -402,10 +403,7 @@
           <input type="text" name="name" placeholder="doge.jpg" required />
           <span class="error-msg" id="name-error"></span>
         </label>
-        <label
-          >upload
-          <input type="file" name="file" accept="image/*" required />
-        </label>
+        <input type="file" name="file" accept="image/*" hidden />
         <img id="upload-preview" class="upload-preview" alt="preview" />
         <label
           >tags (comma separated)
@@ -574,11 +572,15 @@
         dom.uploadPreview.classList.add("visible");
       }
 
-      dom.addFileInput.addEventListener("change", (e) => showUploadPreview(e.target.files[0]));
-
       dom.addForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         dom.nameError.classList.remove("visible");
+
+        if (!dom.addFileInput.files.length) {
+          dom.nameError.textContent = "paste or drop an image first";
+          dom.nameError.classList.add("visible");
+          return;
+        }
 
         const res = await fetch("/api/memes", { method: "POST", body: new FormData(dom.addForm) });
 
