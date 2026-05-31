@@ -145,9 +145,12 @@ func handleCreateMeme(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	origFileName := filepath.Base(header.Filename)
-	diskPath := filepath.Join("images", origFileName)
-	publicURL := "/images/" + origFileName
+	timeNow := time.Now()
+	id := fmt.Sprintf("%d", timeNow.UnixNano())
+	ext := filepath.Ext(header.Filename)
+
+	diskPath := filepath.Join("images", id+ext)
+	publicURL := "/images/" + id + ext
 
 	dst, err := os.Create(diskPath)
 	if err != nil {
@@ -167,8 +170,7 @@ func handleCreateMeme(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "create meme failed: db error", http.StatusInternalServerError)
 		return
 	}
-	timeNow := time.Now()
-	id := fmt.Sprintf("%d", timeNow.UnixNano())
+
 	newMeme := Meme{
 		ID:       id,
 		Name:     name,
