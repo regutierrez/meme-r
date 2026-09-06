@@ -1,0 +1,12 @@
+name: meme-r
+
+services:
+  meme-r:
+    image: ${MEME_IMAGE:-ghcr.io/regutierrez/meme-r:latest}
+    ports:
+      - "${MEME_BIND_ADDRESS:-127.0.0.1}:${MEME_PORT:-6942}:6942"
+    volumes:
+      - memes:/data
+
+volumes:
+  memes:
